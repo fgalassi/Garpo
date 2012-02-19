@@ -1,1 +1,5 @@
 rvm use 1.9.3-p0@garpo
+
+if ! command -v grp ; then
+    PATH=$PATH:$(pwd)/bin
+fi
