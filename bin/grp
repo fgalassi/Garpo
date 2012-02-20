@@ -27,9 +27,8 @@ command :commit do |c|
   c.when_called do |args, options|
     message = options.message || ask_editor
     if message.match(/\S/)
-      greatest_snapshot = Dir.glob("#{GARPO_DIR}/snapshot-*").map {|s| s[/\d+/].to_i}.max || 0
       this_snapshot = greatest_snapshot + 1
-      snapshot_dir = "#{GARPO_DIR}/snapshot-#{this_snapshot}"
+      snapshot_dir = snapshot_directory(this_snapshot)
       files_dir = "#{snapshot_dir}/files"
 
       mkdir_p files_dir
@@ -42,4 +41,27 @@ command :commit do |c|
       say_error "Garpo aborted commit (empty commit message)"
     end
   end
+end
+
+command :checkout do |c|
+  c.syntax = "grp checkout [snapshot number]"
+  c.description = "Checkout a Garpo's snapshot"
+  c.when_called do |args, options|
+    snapshot = args[0] || greatest_snapshot
+    snapshot_dir = snapshot_directory(snapshot)
+    if File.directory? snapshot_dir
+      cp_r "#{snapshot_dir}/files/.", "."
+      say_ok "Garpo checked out snapshot #{snapshot}"
+    else
+      say_error "Garpo aborted checkout (not a valid revision)"
+    end
+  end
+end
+
+def greatest_snapshot
+  Dir.glob("#{GARPO_DIR}/snapshot-*").map {|s| s[/\d+/].to_i}.max || 0
+end
+
+def snapshot_directory(number)
+  "#{GARPO_DIR}/snapshot-#{number}"
 end
