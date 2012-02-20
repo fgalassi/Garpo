@@ -23,12 +23,23 @@ end
 command :commit do |c|
   c.syntax = "grp commit"
   c.description = "Commit a directory shapshot to Garpo"
+  c.option "-m", "--message MESSAGE", String, "Commit message"
   c.when_called do |args, options|
-    greatest_snapshot = Dir.glob("#{GARPO_DIR}/snapshot-*").map {|s| s[/\d+/].to_i}.max || 0
-    this_snapshot = greatest_snapshot + 1
-    snapshot_dir = "#{GARPO_DIR}/snapshot-#{this_snapshot}"
-    mkdir snapshot_dir
-    cp_r Dir.entries(".") - [".", "..", GARPO_DIR], snapshot_dir
-    say_ok "Garpo committed snapshot #{this_snapshot}"
+    message = options.message || ask_editor
+    if message.match(/\S/)
+      greatest_snapshot = Dir.glob("#{GARPO_DIR}/snapshot-*").map {|s| s[/\d+/].to_i}.max || 0
+      this_snapshot = greatest_snapshot + 1
+      snapshot_dir = "#{GARPO_DIR}/snapshot-#{this_snapshot}"
+      files_dir = "#{snapshot_dir}/files"
+
+      mkdir_p files_dir
+      cp_r Dir.entries(".") - [".", "..", GARPO_DIR], files_dir
+      open "#{snapshot_dir}/MESSAGE", "w" do |file|
+        file.write message
+      end
+      say_ok "Garpo committed snapshot #{this_snapshot}"
+    else
+      say_error "Garpo aborted commit (empty commit message)"
+    end
   end
 end
